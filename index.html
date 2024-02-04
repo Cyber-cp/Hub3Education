@@ -1,0 +1,218 @@
+<html>
+    <title>Home</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-csv/1.0.11/jquery.csv.min.js"></script>
+    <body style="height: 5000px">
+        <script>
+            const stateMap = {
+                "Alabama": "AL",
+                "Alaska": "AK",
+                "Arizona": "AZ",
+                "Arkansas": "AR",
+                "California": "CA",
+                "Colorado": "CO",
+                "Connecticut": "CT",
+                "Delaware": "DE",
+                "Florida": "FL",
+                "Georgia": "GA",
+                "Hawaii": "HI",
+                "Idaho": "ID",
+                "Illinois": "IL",
+                "Indiana": "IN",
+                "Iowa": "IA",
+                "Kansas": "KS",
+                "Kentucky": "KY",
+                "Louisiana": "LA",
+                "Maine": "ME",
+                "Maryland": "MD",
+                "Massachusetts": "MA",
+                "Michigan": "MI",
+                "Minnesota": "MN",
+                "Mississippi": "MS",
+                "Missouri": "MO",
+                "Montana": "MT",
+                "Nebraska": "NE",
+                "Nevada": "NV",
+                "New Hampshire": "NH",
+                "New Jersey": "NJ",
+                "New Mexico": "NM",
+                "New York": "NY",
+                "North Carolina": "NC",
+                "North Dakota": "ND",
+                "Ohio": "OH",
+                "Oklahoma": "OK",
+                "Oregon": "OR",
+                "Pennsylvania": "PA",
+                "Rhode Island": "RI",
+                "South Carolina": "SC",
+                "South Dakota": "SD",
+                "Tennessee": "TN",
+                "Texas": "TX",
+                "Utah": "UT",
+                "Vermont": "VT",
+                "Virginia": "VA",
+                "Washington": "WA",
+                "West Virginia": "WV",
+                "Wisconsin": "WI",
+                "Wyoming": "WY"
+            };
+            var currentZip;
+        </script>
+        <div style="overflow: hidden; width: 100%" id="main_div">
+            <div>
+                <div style="width: 25%; float: left;" id="college_filter_page">
+                    <div id="college_filter" class="rounded">
+                        <h2 style="text-align: center">College Filter</h2>
+                        <div class="rounded-blue">
+                            <div>
+                                <input style="width: 85%" id="college_location" placeholder="Enter location"/>
+                                <input type="checkbox" id="college_location_enabled" checked/>
+                            </div>
+                            <div style="z-index: 1; width: 425px" id="suggestions"></div>
+                            <div>
+                                <img src="res/target.png" style="margin-top: 5px; position: absolute; width: 20px; height: 20px" id="search_button"/>
+                                <input type="number" style="margin-top: 5px; margin-left: 25px; width: 150px" id="college_distance" value="100" placeholder="Enter distance"/><span style="position: absolute; margin-top: 7px; margin-left:10px;">miles</span>
+                            </div>
+                        </div>
+                        <div class="rounded-blue">
+                            <label>Select Degree Level(s)</label>
+                            <input type="checkbox" id="degree_level_enabled" checked/>
+                            <br>
+                            <input type="checkbox" id="certificate" name="degree" value="1">
+                            <label for="certificate">Certificate</label><br>
+                            <input type="checkbox" id="associate" name="degree" value="2">
+                            <label for="associate">Associate</label><br>
+                            <input type="checkbox" id="bachelor" name="degree" value="3">
+                            <label for="bachelor">Bachelor's</label><br>
+                            <input type="checkbox" id="master" name="degree" value="4">
+                            <label for="master">Master's</label><br>
+                            <input type="checkbox" id="doctoral" name="degree" value="5">
+                            <label for="doctoral">Doctoral</label><br>
+                            <input type="checkbox" id="professional" name="degree" value="6">
+                            <label for="professional">Professional</label><br>
+                        </div>
+                        <div class="rounded-blue">
+                            <label>Sort By:</label>
+                            <select id="school_sort">
+                                <option value="" selected>none</option>
+                                <option value="latest.cost.avg_net_price.overall:asc">Cost (Low to High)</option>
+                                <option value="latest.cost.avg_net_price.overall:desc">Cost (High to Low)</option>
+                                <option value="latest.student.size:asc">Size (Low to High)</option>
+                                <option value="latest.student.size:desc">Size (High to Low)</option>
+                                <option value="latest.completion.rate_suppressed.overall:asc">Completion Rate (Low to High)</option>
+                                <option value="latest.completion.rate_suppressed.overall:desc">Completion Rate (High to Low)</option>
+                            </select>
+                        </div>
+                        <button class="rounded-blue" style="margin-left: 5px" id="search_colleges">Search</button>
+                        <button class="rounded-blue" style="margin-left: 5px" id="additional_res">Additional Resources</button>
+                        <button class="rounded-blue" style="margin-left: 5px" id="job_reqs_btn">Job Requirements</button>
+                    </div>
+                </div>
+            </div>
+                <div style="float: left; width: 75%;">
+                    <div id="college_list">
+                        <h1 style="margin-left: 50%; margin-top: 30%; font-size: 100px">Empty :(</h1>
+                    </div>
+
+                </div>
+            </div>
+        <script>
+                $(document).ready(function(){
+                    // move id suggestions to top layer
+                    $.ajax({
+                        url: 'res/uscities.csv', // Replace 'example.csv' with your CSV file path
+                        dataType: 'text',
+                        success: function(data) {
+                            var csvData = $.csv.toArrays(data);
+                            $('#college_location').on('input', function() {
+                                var filterValue = $(this).val().trim().toLowerCase();
+                                var filteredCities = csvData.filter(function(row) {
+                                    return row[0].toLowerCase().includes(filterValue);
+                                });
+                                displayFilteredCities(filteredCities);
+                            });
+                        }
+                    });
+
+                    function displayFilteredCities(filteredCities) {
+                        var $filteredCitiesContainer = $('#suggestions');
+                        $filteredCitiesContainer.empty();
+                        filteredCities.forEach(function(row) {
+                            var city = row[0];
+                            var state = row[3];
+                            var zip = row[15];
+                            var cityBox = $('<div>').addClass('city-box').text(city + ", " + state);
+                            cityBox.click(function() {
+                                // split zip codes by space and use first one
+                                currentZip = zip.split(' ')[0];
+                                state = stateMap[state];
+                                var infoText = city + ", " + state;
+                                $('#college_location').val(infoText);
+                                // clear the suggestions
+                                $filteredCitiesContainer.empty();
+                                console.log(currentZip);
+                            });
+                            $filteredCitiesContainer.append(cityBox);
+                        });
+                    }
+
+                    // make an on enter event for the input
+                    $('#college_location').keypress(function(e) {
+                        if(e.which === 13) {
+                            // get the first element of the suggestions and set the input to that value
+                            var infoText = $('#suggestions').children().first().text();
+                            $('#college_location').val(infoText);
+                            currentCity = infoText.split(",")[0];
+                            currentState = infoText.split(",")[1].trim();
+                        }
+                    });
+                });
+            </script>
+        <div id="additional_info" hidden>
+            <div>
+                <h1 style="float: left">Additional Resources</h1>
+                <h1 style="margin-left: 65%; float: left;" id="close">X</h1>
+            </div>
+            <div style="background: #bcaadd; margin-top: 70px; padding: 10px">
+                <a href="https://www.volunteermatch.org/" style="font-size: 20px">VolunteerMatch</a>
+                <p>VolunteerMatch is the most effective way to recruit highly qualified volunteers for your nonprofit. We match you with people who are passionate about and committed to your cause, and who can help when and where you need them.</p>
+            </div>
+            <div style="background: #bcaadd; margin-top: 10px; padding: 10px">
+                <a href="https://www.careeronestop.org/" style="font-size: 20px">CareerOneStop</a>
+                <p>CareerOneStop is your source for employment information and inspiration. The place to manage your career. Your pathway to career success. Tools to help job seekers, students, businesses, and career professionals.</p>
+            </div>
+            <div style="background: #bcaadd; margin-top: 10px; padding: 10px">
+                <a href="https://www.collegeboard.org/" style="font-size: 20px">CollegeBoard</a>
+                <p>College Board is a mission-driven organization representing over 6,000 of the world’s leading colleges, schools, and other educational organizations. College Board helps students prepare for a successful transition to college through programs and services in college readiness and college success — including the SAT and the Advanced Placement Program.</p>
+            </div>
+            <div style="background: #bcaadd; margin-top: 10px; padding: 10px">
+                <a href="https://www.cappex.com/" style="font-size: 20px">Cappex</a>
+                <p>Cappex is a comprehensive college search and scholarship portal that helps students find their best fit college and afford it. Cappex provides college reviews, scholarship matches, college rankings and more.</p>
+            </div>
+            <div style="background: #bcaadd; margin-top: 10px; padding: 10px">
+                <a href="https://www.niche.com/" style="font-size: 20px">Niche</a>
+                <p>Niche is the best place to research U.S. colleges, schools, neighborhoods, and companies. Every month millions of people use our easy-to-read and comprehensive report cards, rankings, and reviews to choose the right schools or neighborhoods for them.</p>
+            </div>
+            <div style="background: #bcaadd; margin-top: 10px; padding: 10px">
+                <a href="https://www.unigo.com/" style="font-size: 20px">Unigo</a>
+                <p>Unigo is the premier network for current and future college students to get to where they’re going. Unigo provides cutting-edge tools, compelling content, and essential information, empowering students to make the best decisions about their college experience.</p>
+            </div>
+            <!-- CodeAcademy -->
+            <div style="background: #bcaadd; margin-top: 10px; padding: 10px">
+                <a href="https://www.codecademy.com/" style="font-size: 20px">CodeAcademy</a>
+                <p>Codecademy is an education company. But not one in the way you might think. We're committed to building the best learning experience inside and out, making Codecademy the best place for our team to learn, teach, and create the online learning experience of the future.</p>
+            </div>
+        </div>
+        <div id="job_reqs" hidden>
+            <div>
+                <h1 style="float: left">Additional Resources</h1>
+                <h1 style="margin-left: 65%; float: left;" id="close2">X</h1>
+            </div>
+            <input id="job_input"></input>
+            <div id="job_suggestions"></div>
+        </div>
+        <script src="index.js"></script>
+
+    </body>
+</html>
